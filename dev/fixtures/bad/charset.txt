@@ -1,0 +1,1 @@
+﻿A byte order mark, against charset = utf-8.
