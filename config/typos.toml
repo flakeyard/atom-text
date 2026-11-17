@@ -1,0 +1,25 @@
+# flakeyard's configuration of typos (FY-0037). The atom passes it with
+# --config and --isolated when the project has none of typos.toml,
+# _typos.toml and .typos.toml at its root; a project's file replaces it
+# wholly.
+#
+# Every value is the default of typos, written out. [files] is left out: its
+# values decide which files typos finds when it walks directories, and
+# pre-commit passes every file by name. No word, identifier or file is
+# ignored.
+
+[default]
+# Skip binary files.
+binary = false
+# Check the names of files.
+check-filename = true
+# Check the content of files.
+check-file = true
+# Allow identifiers with characters outside ASCII.
+unicode = true
+# Skip identifiers that look like hexadecimal numbers, such as hashes.
+ignore-hex = true
+# Do not take identifiers to start with digits.
+identifier-leading-digits = false
+# Accept the spellings of every variant of English.
+locale = "en"
