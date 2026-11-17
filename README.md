@@ -9,8 +9,10 @@ editorconfig-checker, as git hooks and as the check `checks.text`
 
 The atom has one input, `git-hooks`, which the project makes it share with
 `follows` ([FY-0017][fy-0017]). It has no formatter, so it needs no
-`treefmt-nix`. While the atom is `0.y.z`, only flakeyard's own repositories use
-it, in the form of [FY-0016][fy-0016]:
+`treefmt-nix`. It also pins [lib-atom][lib-atom], the functions that atoms
+share, in its own `flake.lock`; the project neither declares nor follows it
+([FY-0040][fy-0040]). While the atom is `0.y.z`, only flakeyard's own
+repositories use it, in the form of [FY-0016][fy-0016]:
 
 ```nix
 {
@@ -116,7 +118,7 @@ A project's file at the standard path replaces the default wholly.
   reads only one.
 - A configuration of typos in `[tool.typos]` of `pyproject.toml`, or in
   `[package.metadata.typos]` or `[workspace.metadata.typos]` of `Cargo.toml`,
-  fails evaluation: move its content to `typos.toml`.
+  fails evaluation: move its content to one of the standard paths.
 - editorconfig-checker gets `-config` with the chosen file and then reads no
   other configuration file. The default lists every key of the tool except
   `Version`, which it fails on when it differs from its own version, and
@@ -124,6 +126,19 @@ A project's file at the standard path replaces the default wholly.
   charset, line endings, final newline and trailing whitespace.
 - `.ecrc`, the old name of the configuration of editorconfig-checker, fails
   evaluation: rename it to `.editorconfig-checker.json`.
+
+The messages of these errors are those of lib-atom ([FY-0040][fy-0040]), such
+as:
+
+```text
+atom-text: the project has more than one configuration of typos: typos.toml,
+.typos.toml; keep one.
+atom-text: the atom cannot pass these configurations of typos to it:
+pyproject.toml [tool.typos]; write the configuration in one of typos.toml,
+_typos.toml, .typos.toml instead.
+```
+
+(one line each, wrapped here).
 
 To replace a default, commit the file at the root. Since the atom reads only
 tracked files, an untracked file is seen by the tools in the working tree but
@@ -222,6 +237,11 @@ and holds the tests:
 - `test-follows`: the error for a missing `follows`;
 - `test-next-major`: the warning of the next major version.
 
+The dev flake has no input for lib-atom: it fetches the revision that the root
+[`flake.lock`](flake.lock) pins, gives it to the atom and takes the fixture
+projects and the tests `test-follows`, `test-next-major` and `test-workspace`
+from `internal/testing` of that revision ([FY-0040][fy-0040]).
+
 Run the same commands as CI:
 
 ```sh
@@ -270,6 +290,9 @@ atoms that will provide them in this repository are not released yet
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0037-atoms-ship-default-configs-that-projects-replace.md
 [fy-0038]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0038-roll-out-the-atoms.md
+[fy-0040]:
+  https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0040-share-code-through-lib-repositories.md
+[lib-atom]: https://github.com/flakeyard/lib-atom
 [typos]: config/typos.toml
 [versioning]: https://github.com/flakeyard/.github/blob/main/VERSIONING.md
 [workflow-check]: https://github.com/flakeyard/workflow-check

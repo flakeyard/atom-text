@@ -3,7 +3,7 @@
 # flag; typos also gets --isolated, so that it reads no configuration file it
 # finds itself, and editorconfig-checker reads none once it gets -config. The
 # check runs the same entry and arguments.
-{ root }:
+{ root, shared }:
 { self, ... }:
 {
   _file = ./hooks.nix;
@@ -16,15 +16,12 @@
       ...
     }:
     let
-      configs = import ./configs.nix {
-        inherit lib root;
-        project = self.outPath;
-      };
       # A project file the atom does not take fails evaluation, instead of
       # being ignored.
-      chosen =
-        name:
-        if configs.errors == [ ] then "${configs.${name}}" else throw (lib.concatLines configs.errors);
+      configs = import ./configs.nix {
+        inherit lib root shared;
+        project = self.outPath;
+      };
     in
     {
       pre-commit.settings.hooks = {
@@ -40,7 +37,7 @@
             lib.concatStringsSep " " [
               (lib.getExe' config.pre-commit.settings.hooks.typos.package "typos")
               "--config"
-              (chosen "typos")
+              "${configs.typos.file}"
               "--isolated"
               "--force-exclude"
             ]
@@ -51,7 +48,7 @@
           package = lib.mkOverride 900 pkgs.editorconfig-checker;
           args = lib.mkOverride 900 [
             "-config"
-            (chosen "editorconfig-checker")
+            "${configs.editorconfig-checker.file}"
           ];
         };
       };

@@ -4,7 +4,7 @@
 # pre-commit selects the files by `files`, `types` and `excludes` as the
 # installed hook does. Its source is the whole project: the hooks check every
 # file, so any change rebuilds the check.
-{ git-hooks }:
+{ git-hooks, warning }:
 { self, ... }:
 {
   _file = ./checks.nix;
@@ -19,15 +19,11 @@
     let
       inherit (pkgs) lib;
       inherit (config.pre-commit) settings;
-      warning = import ./warning.nix {
-        inherit lib;
-        file = ./next-major.nix;
-      };
       # Every option of the project's hook; raw is computed from the others.
       hook = name: removeAttrs settings.hooks.${name} [ "raw" ];
     in
     {
-      checks.text = warning (
+      checks.text = warning lib (
         git-hooks.lib.${system}.run {
           src = self.outPath;
           hooks = lib.genAttrs [ "typos" "editorconfig-checker" ] hook;
