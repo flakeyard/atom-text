@@ -1,0 +1,7 @@
+{
+  "Disable": {
+    "Indentation": false,
+    "IndentSize": true,
+    "MaxLineLength": true
+  }
+}
