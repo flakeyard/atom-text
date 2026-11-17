@@ -7,26 +7,32 @@ atomInputs:
 { inputs, ... }:
 let
   root = ./..;
-  # The module of an upstream flake, or the error that names the missing
-  # follows line.
-  upstream =
-    name: module:
-    let
-      message = import ./follows.nix {
-        inherit name;
-        atom = atomInputs.${name};
-        consumer = inputs.${name} or null;
-      };
-    in
-    if message == null then module else throw message;
+  # The functions that atoms share, of the revision the atom pins (FY-0040).
+  shared = atomInputs.lib-atom.lib;
+  upstream = shared.upstream {
+    atom = "atom-text";
+    own = atomInputs;
+    consumer = inputs;
+  };
+  # The warning of the next major version, with lib of the consumer's nixpkgs.
+  warning =
+    lib:
+    shared.warning {
+      inherit lib;
+      atom = "atom-text";
+      inherit root;
+    };
 in
 {
   key = toString ./default.nix;
   _file = ./default.nix;
   imports = [
     (upstream "git-hooks" atomInputs.git-hooks.flakeModule)
-    (import ./hooks.nix { inherit root; })
-    (import ./checks.nix { inherit (atomInputs) git-hooks; })
-    ./shell.nix
+    (import ./hooks.nix { inherit root shared; })
+    (import ./checks.nix {
+      inherit (atomInputs) git-hooks;
+      inherit warning;
+    })
+    (import ./shell.nix { inherit warning; })
   ];
 }

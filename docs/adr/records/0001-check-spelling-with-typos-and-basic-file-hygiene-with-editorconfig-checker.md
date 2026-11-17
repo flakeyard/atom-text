@@ -41,6 +41,12 @@ Decisions of flakeyard require of it:
   moving tag `v0`, a stricter default ships first as an opt-in under
   `config/next/`, and the warning of the next major version lives in
   `nix/next-major.nix`.
+- [FY-0040][fy-0040]: the check of `follows`, the warning of the next major
+  version and the choice of configuration files are functions of lib-atom, which
+  the atom declares as an input and pins in its own `flake.lock`, and the
+  helpers of the tests come from its `internal/testing`. Logic that only this
+  atom needs, such as the tables of `pyproject.toml` and `Cargo.toml`, stays in
+  the atom.
 
 Reading git-hooks.nix at `204b6977` and the tools of `nixos-26.05` (typos
 1.46.3, editorconfig-checker 3.6.1), with those of `nixos-unstable` (typos
@@ -92,7 +98,10 @@ no formatter and imports no module of treefmt-nix, so it does not declare
 `treefmt-nix` ([FY-0017][fy-0017]). Before importing the module of
 git-hooks.nix, the atom fails evaluation with the line
 `inputs.git-hooks.follows = "git-hooks";` when the consumer's input of that name
-has another store path.
+has another store path, through the function `upstream` of lib-atom.
+
+The public flake also declares `lib-atom`, which the atom pins in its own
+`flake.lock` and consumers neither declare nor follow ([FY-0040][fy-0040]).
 
 ### typos
 
@@ -104,7 +113,8 @@ a project's file working for the files that pre-commit passes by name. The file
 is `config/typos.toml`, or the project's `typos.toml`, `_typos.toml` or
 `.typos.toml` at the root, as a store path of its own made with `builtins.path`.
 More than one of them fails evaluation with their names, since typos reads only
-one.
+one. The function `config` of lib-atom chooses the file of each tool and makes
+the messages of the errors ([FY-0040][fy-0040]).
 
 `config/typos.toml` writes out the values of `[default]` that typos has, each
 with its default, and ignores no word, identifier or file. It leaves out
@@ -113,8 +123,9 @@ directories.
 
 A configuration of typos in `pyproject.toml` (`[tool.typos]`) or `Cargo.toml`
 (`[package.metadata.typos]`, `[workspace.metadata.typos]`) at the root fails
-evaluation with a message that names the file and the table. The atom detects
-the tables with `builtins.fromTOML`.
+evaluation with a message that names the file and the table: the atom passes
+them to `config` as `unsupported` entries whose condition reads the table with
+`builtins.fromTOML`.
 
 ### editorconfig-checker
 
@@ -125,8 +136,9 @@ project's `.editorconfig-checker.json` at the root, as a store path of its own.
 The default lists every key that `-init` writes except `Version`, with the
 defaults of the tool, and disables `Indentation`, `IndentSize` and
 `MaxLineLength`, so that it checks charset, line endings, final newline and
-trailing whitespace ([FY-0017][fy-0017]). An `.ecrc` at the root fails
-evaluation with the advice to rename it to `.editorconfig-checker.json`.
+trailing whitespace ([FY-0017][fy-0017]). An `.ecrc` at the root, the old name
+of the file, is an `unsupported` entry and fails evaluation with a message that
+names `.editorconfig-checker.json` instead.
 
 ### Check and shell
 
@@ -179,22 +191,26 @@ read through it.
 ### Next major version
 
 While `nix/next-major.nix` exists, `checks.text` and `devShells.flakeyard-text`
-warn with `lib.warn` of the consumer's nixpkgs: the version, the end of support
-6 months after it, and the link to the migration guide the file names
-([FY-0016][fy-0016], [FY-0038][fy-0038]).
+warn with `lib.warn` of the consumer's nixpkgs, through the function `warning`
+of lib-atom: the version, the end of support 6 months after it, and the link to
+the migration guide the file names ([FY-0016][fy-0016], [FY-0038][fy-0038]).
 
 ### Tests
 
 `dev/flake.nix` imports the atom from the flake's own outputs called with the
 dev flake's `git-hooks`, which is what `follows` gives a consumer, together with
 atom-workspace, atom-nix, atom-shell and atom-workflows, and checks this
-repository with them. Fixture projects import the atom and atom-workspace the
-same way. Its checks evaluate on x86_64-linux and aarch64-linux: a project that
-passes, with indentation and a line length that the default does not check; a
-project with a misspelled word, CRLF, a missing final newline, trailing
-whitespace and a byte order mark; each accepted name of the configuration of
-typos; a `.editorconfig-checker.json` that enables indentation; the entry of
-typos; a `_typos.toml` below the root that does not apply; a project without
+repository with them. The dev flake has no input for lib-atom: it fetches the
+revision that the root `flake.lock` pins, gives it to the atom and takes the
+fixture projects and the tests of `follows`, the warning and the glue of
+atom-workspace from its `internal/testing`, with the messages restated in the
+tests. Fixture projects import the atom and atom-workspace the same way. Its
+checks evaluate on x86_64-linux and aarch64-linux: a project that passes, with
+indentation and a line length that the default does not check; a project with a
+misspelled word, CRLF, a missing final newline, trailing whitespace and a byte
+order mark; each accepted name of the configuration of typos; a
+`.editorconfig-checker.json` that enables indentation; the entry of typos; a
+`_typos.toml` below the root that does not apply; a project without
 `.editorconfig`; the evaluation errors; the global excludes and the files that
 tools write; the keys of both default configurations against the installed
 tools; the glue of atom-workspace; the follows error; and the next-major
@@ -202,9 +218,9 @@ warning.
 
 ## Constraints
 
-- The public flake MUST declare only the input `git-hooks`, and MUST fail
-  evaluation with the exact follows line when the consumer's input of that name
-  has another store path.
+- The public flake MUST declare only the inputs `git-hooks` and `lib-atom`
+  ([FY-0040][fy-0040]), and MUST fail evaluation with the exact follows line
+  when the consumer's `git-hooks` has another store path.
 - The entry of the hook `typos` MUST pass exactly the chosen file with
   `--config`, and `--isolated`.
 - editorconfig-checker MUST get the chosen file with `-config`.
@@ -276,3 +292,5 @@ warning.
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0037-atoms-ship-default-configs-that-projects-replace.md
 [fy-0038]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0038-roll-out-the-atoms.md
+[fy-0040]:
+  https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0040-share-code-through-lib-repositories.md

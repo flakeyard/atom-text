@@ -5,7 +5,7 @@
 {
   facts,
   fixture,
-  root,
+  lib-atom,
   ...
 }:
 {
@@ -13,12 +13,36 @@
     { pkgs, system, ... }:
     let
       inherit (pkgs) lib;
+      # The errors that the atom's own module makes for a fixture project:
+      # the atom gets a lib-atom whose config gives the errors as the file,
+      # since builtins.tryEval loses the text of a throw.
+      spied.lib = lib-atom // {
+        config =
+          arguments: tool:
+          let
+            chosen = lib-atom.config arguments tool;
+          in
+          chosen // { file = lib.concatStringsSep "\n" chosen.errors; };
+      };
       errors =
         name:
-        (import (root + "/nix/configs.nix") {
-          inherit lib root;
-          project = root + "/dev/fixtures/${name}";
-        }).errors;
+        let
+          inherit
+            ((fixture {
+              inherit name;
+              atomInputs.lib-atom = spied;
+            }).allSystems.${system}.pre-commit.settings.hooks
+            )
+            typos
+            editorconfig-checker
+            ;
+          # The file in the entry of typos, between --config and --isolated.
+          typosFile = lib.head (
+            lib.splitString " --isolated" (lib.elemAt (lib.splitString " --config " typos.entry) 1)
+          );
+          lines = text: lib.optionals (text != "") (lib.splitString "\n" text);
+        in
+        lines typosFile ++ lines (lib.elemAt editorconfig-checker.args 1);
       evaluates =
         name: (builtins.tryEval (fixture { inherit name; }).checks.${system}.text.drvPath).success;
     in
@@ -27,23 +51,23 @@
         # Restated: the text is the interface (FY-0035).
         "two configurations of typos fail with their names" =
           errors "typos-configs" == [
-            "atom-text: typos.toml, .typos.toml configure typos at the root; typos reads only one of them, keep one."
+            "atom-text: the project has more than one configuration of typos: typos.toml, .typos.toml; keep one."
           ];
         "pyproject.toml fails with its table" =
           errors "pyproject" == [
-            "atom-text: pyproject.toml configures typos in [tool.typos], which the atom does not pass to typos; move its content to typos.toml at the root."
+            "atom-text: the atom cannot pass these configurations of typos to it: pyproject.toml [tool.typos]; write the configuration in one of typos.toml, _typos.toml, .typos.toml instead."
           ];
         "Cargo.toml fails with the table of the package" =
           errors "cargo" == [
-            "atom-text: Cargo.toml configures typos in [package.metadata.typos], which the atom does not pass to typos; move its content to typos.toml at the root."
+            "atom-text: the atom cannot pass these configurations of typos to it: Cargo.toml [package.metadata.typos]; write the configuration in one of typos.toml, _typos.toml, .typos.toml instead."
           ];
         "Cargo.toml fails with the table of the workspace" =
           errors "cargo-workspace" == [
-            "atom-text: Cargo.toml configures typos in [workspace.metadata.typos], which the atom does not pass to typos; move its content to typos.toml at the root."
+            "atom-text: the atom cannot pass these configurations of typos to it: Cargo.toml [workspace.metadata.typos]; write the configuration in one of typos.toml, _typos.toml, .typos.toml instead."
           ];
         ".ecrc fails" =
           errors "ecrc" == [
-            "atom-text: .ecrc is the old name of the configuration of editorconfig-checker, which the atom does not pass to it; rename it to .editorconfig-checker.json."
+            "atom-text: the atom cannot pass these configurations of editorconfig-checker to it: .ecrc; write the configuration in .editorconfig-checker.json instead."
           ];
         "other tables are fine" = errors "other-tables" == [ ];
         "a project without such files evaluates" = evaluates "good";
