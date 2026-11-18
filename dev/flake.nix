@@ -26,7 +26,7 @@
       inputs.git-hooks.follows = "git-hooks";
     };
     atom-nix = {
-      url = "git+https://github.com/flakeyard/atom-nix?ref=v0&rev=d8e5b1d8f367d27181fbf6e2616c9e6c5ecbbafa&shallow=1";
+      url = "git+https://github.com/flakeyard/atom-nix?ref=v0&rev=1ed903c4516d57313ab09415d3990834dbfd4495&shallow=1";
       inputs.treefmt-nix.follows = "treefmt-nix";
       inputs.git-hooks.follows = "git-hooks";
     };
@@ -39,7 +39,7 @@
       url = "git+https://github.com/flakeyard/atom-workflows?ref=v0&rev=82957679afb098f2c36fbcc1ccdf5d52f3286ba4&shallow=1";
       inputs.git-hooks.follows = "git-hooks";
     };
-    atom-workspace.url = "git+https://github.com/flakeyard/atom-workspace?ref=v0&rev=53d4d101ec71025dbb19da3d423455e72e10198a&shallow=1";
+    atom-workspace.url = "git+https://github.com/flakeyard/atom-workspace?ref=v0&rev=09ea8faaf078e30d9c918745ac40ce69a7b82946&shallow=1";
     import-tree.url = "git+https://github.com/vic/import-tree?ref=main&rev=eb1b52eaecc57f7c136d07ae8a93e724dfecac46&shallow=1";
   };
 
