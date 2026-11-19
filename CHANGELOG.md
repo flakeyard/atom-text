@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/flakeyard/atom-text/compare/v0.1.1...v0.1.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* **deps:** update flake input lib-atom to 99d4af0 ([#27](https://github.com/flakeyard/atom-text/issues/27)) ([ba254f8](https://github.com/flakeyard/atom-text/commit/ba254f8afc7a6061a2cb538c82b096aeaf0e270f))
+
 ## [0.1.1](https://github.com/flakeyard/atom-text/compare/v0.1.0...v0.1.1) (2026-11-18)
 
 
